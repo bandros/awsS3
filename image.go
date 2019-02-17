@@ -120,6 +120,7 @@ func (img *S3img) Delete(bucket string) error {
 	if err != nil {
 		return err
 	}
+	return nil
 }
 
 func getSize(img image.Rectangle) (int, int) {
