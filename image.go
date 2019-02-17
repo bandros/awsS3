@@ -68,7 +68,7 @@ func (img *S3img) Upload(bucket string) ([]string, error) {
 	}
 	var bucketSlice = strings.Split(bucket, "/")
 	bucket = bucketSlice[0]
-	var filepath = strings.Join(bucketSlice[1:len(bucketSlice)-1], "/")
+	var filepath = strings.Join(bucketSlice[1:], "/")
 	filepath = strings.TrimRight(filepath, "/")
 	for i, v := range img.imgMulti {
 		var width, height = getSize(v.Bounds())
