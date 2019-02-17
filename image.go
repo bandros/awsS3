@@ -70,10 +70,19 @@ func (img *S3img) Upload(bucket string) ([]string, error) {
 	bucket = bucketSlice[0]
 	var filepath = strings.Join(bucketSlice[1:], "/")
 	filepath = strings.TrimRight(filepath, "/")
-	for i, v := range img.imgMulti {
-		var width, height = getSize(v.Bounds())
+	if img.file != nil {
+		//single upload
+		var width, height = getSize(img.img.Bounds())
 		if (img.Width > 0 || img.Height > 0) && img.Width < width && img.Height < height {
-			img.imgMulti[i] = imaging.Resize(v, img.Width, img.Height, imaging.Lanczos)
+			img.img = imaging.Resize(img.img, img.Width, img.Height, imaging.Lanczos)
+		}
+	}else if img.fileMulti != nil{
+		//multiupload
+		for i, v := range img.imgMulti {
+			var width, height = getSize(v.Bounds())
+			if (img.Width > 0 || img.Height > 0) && img.Width < width && img.Height < height {
+				img.imgMulti[i] = imaging.Resize(v, img.Width, img.Height, imaging.Lanczos)
+			}
 		}
 	}
 	sess, _ := session.NewSessionWithOptions(session.Options{
