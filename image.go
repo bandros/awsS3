@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/disintegration/imaging"
 	"image"
@@ -97,6 +98,28 @@ func (img *S3img) Upload(bucket string) ([]string, error) {
 		return locationSlice, err
 	}
 
+}
+
+func (img *S3img) Delete(bucket string) error {
+	var bucketSlice = strings.Split(bucket, "/")
+	bucket = bucketSlice[0]
+	var filepath = strings.Join(bucketSlice[1:len(bucketSlice)-1], "/")
+	filepath = strings.TrimRight(filepath, "/")
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Region:      aws.String(img.AwsRegion),
+			Credentials: credentials.NewStaticCredentials(img.AwsKey, img.AwsScreetKey, ""),
+		},
+	})
+	svc := s3.New(sess)
+	params := &s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filepath),
+	}
+	_, err := svc.DeleteObject(params)
+	if err != nil {
+		return err
+	}
 }
 
 func getSize(img image.Rectangle) (int, int) {

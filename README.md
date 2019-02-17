@@ -35,9 +35,9 @@ err := img.SetMulti(files)\
 if err != nil {\
     fmt.Println("Set Img: ",err.Error())\
     return\
-}
+}\
 location, err := img.Upload("bucket/folder")\
-if err != nil {
+if err != nil {\
   fmt.Println("Upload: ",err.Error())\
   return\
 }\
