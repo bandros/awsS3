@@ -76,7 +76,7 @@ func (img *S3img) Upload(bucket string) ([]string, error) {
 		if (img.Width > 0 || img.Height > 0) && img.Width < width && img.Height < height {
 			img.img = imaging.Resize(img.img, img.Width, img.Height, imaging.Lanczos)
 		}
-	}else if img.fileMulti != nil{
+	} else if img.fileMulti != nil {
 		//multiupload
 		for i, v := range img.imgMulti {
 			var width, height = getSize(v.Bounds())
@@ -109,10 +109,10 @@ func (img *S3img) Upload(bucket string) ([]string, error) {
 
 }
 
-func (img *S3img) Delete(bucket string) error {
-	var bucketSlice = strings.Split(bucket, "/")
-	bucket = bucketSlice[0]
-	var filepath = strings.Join(bucketSlice[1:len(bucketSlice)-1], "/")
+func (img *S3img) Delete(file string) error {
+	var bucketSlice = strings.Split(file, "/")
+	var bucket = bucketSlice[0]
+	var filepath = strings.Join(bucketSlice[1:], "/")
 	filepath = strings.TrimRight(filepath, "/")
 	sess, _ := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
