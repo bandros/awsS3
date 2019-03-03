@@ -14,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type S3img struct {
@@ -27,6 +28,15 @@ type S3img struct {
 	AwsKey       string
 	AwsScreetKey string
 	AwsRegion    string
+}
+
+type ListObject struct{
+	Fulpath string
+	Folder string
+	File string
+	LastModif time.Time
+	Size uint64
+	IsFolder bool
 }
 
 func (img *S3img) Set(file *multipart.FileHeader) error {
@@ -187,26 +197,49 @@ func upload(uploader *s3manager.Uploader, file *multipart.FileHeader, img image.
 }
 
 
-func (img *S3img) List(bucket string) ([]string, error) {
-	var list = []string{}
+func (img *S3img) List(bucket string) ([]ListObject, error) {
+	bucket = strings.TrimRight(bucket,"/")
 	var bucketSlice = strings.Split(bucket, "/")
 	bucket = bucketSlice[0]
 	var filepath = strings.Join(bucketSlice[1:], "/")
 	filepath = strings.TrimRight(filepath, "/")
 
-	svc := s3.New(session.New(), &aws.Config{Region: aws.String("us-east-1")})
-
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Region:      aws.String(img.AwsRegion),
+			Credentials: credentials.NewStaticCredentials(img.AwsKey, img.AwsScreetKey, ""),
+		},
+	})
+	svc := s3.New(sess)
 	params := &s3.ListObjectsInput{
 		Bucket: aws.String(bucket),
-		Prefix: aws.String(filepath),
+		Prefix:   aws.String(filepath),
 	}
+	resp,err := svc.ListObjects(params)
 
-	resp, err := svc.ListObjects(params)
 	if err != nil {
-		return nil,err
+		return []ListObject{} , err
 	}
+	var list = []ListObject{}
 	for _, key := range resp.Contents {
-		list = append(list,*key.Key)
+		var isFolder = false
+		if *key.Size == 0 {
+			isFolder = true
+		}
+		var folder = *key.Key
+		if !isFolder {
+			var fullpath = strings.Split(folder,"/")
+			folder = strings.Join(fullpath[:len(fullpath)-1],"/")
+		}
+		var fileSlice = strings.Split(*key.Key,"/")
+		list = append(list,ListObject{
+			Fulpath: *key.Key,
+			Folder: folder,
+			File: fileSlice[len(fileSlice)-1],
+			Size: uint64(*key.Size),
+			LastModif: *key.LastModified,
+			IsFolder: isFolder,
+		})
 	}
 	return list,nil
 }

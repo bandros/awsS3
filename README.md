@@ -44,6 +44,24 @@ if err != nil {\
 fmt.Println("Location: ",location)
 
 
+## List file on Bucket
+img := awsS3.S3img{}\
+img.AwsRegion = "ap-southeast-1"\
+img.AwsKey = "Aws Key"\
+img.AwsScreetKey = "Aws Screet Key"\
+location, err := img.List("bucket/folder")\
+if err != nil {\
+    fmt.Println(err.Error())\
+    return\
+}\
+for _,v := range list {\
+    if v.IsFolder {\
+        continue\
+    }\
+    fmt.Println(v.File," in ",v.Folder)\
+}
+
+
 **Router Framework**
 https://github.com/gin-gonic/gin
 
