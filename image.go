@@ -30,13 +30,13 @@ type S3img struct {
 	AwsRegion    string
 }
 
-type ListObject struct{
-	Fulpath string
-	Folder string
-	File string
+type ListObject struct {
+	Fulpath   string
+	Folder    string
+	File      string
 	LastModif time.Time
-	Size uint64
-	IsFolder bool
+	Size      uint64
+	IsFolder  bool
 }
 
 func (img *S3img) Set(file *multipart.FileHeader) error {
@@ -170,7 +170,7 @@ func upload(uploader *s3manager.Uploader, file *multipart.FileHeader, img image.
 	case "image/png":
 		err = imaging.Encode(buf, img, imaging.PNG, imaging.PNGCompressionLevel(png.BestCompression))
 	case "image/jpeg":
-		err = imaging.Encode(buf, img, imaging.JPEG,imaging.JPEGQuality(75))
+		err = imaging.Encode(buf, img, imaging.JPEG, imaging.JPEGQuality(75))
 	case "image/gif":
 		err = imaging.Encode(buf, img, imaging.GIF)
 	case "image/bmp":
@@ -196,9 +196,8 @@ func upload(uploader *s3manager.Uploader, file *multipart.FileHeader, img image.
 	return result.Location, nil
 }
 
-
 func (img *S3img) List(bucket string) ([]ListObject, error) {
-	bucket = strings.TrimRight(bucket,"/")
+	bucket = strings.TrimRight(bucket, "/")
 	var bucketSlice = strings.Split(bucket, "/")
 	bucket = bucketSlice[0]
 	var filepath = strings.Join(bucketSlice[1:], "/")
@@ -213,12 +212,12 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 	svc := s3.New(sess)
 	params := &s3.ListObjectsInput{
 		Bucket: aws.String(bucket),
-		Prefix:   aws.String(filepath),
+		Prefix: aws.String(filepath),
 	}
-	resp,err := svc.ListObjects(params)
+	resp, err := svc.ListObjects(params)
 
 	if err != nil {
-		return []ListObject{} , err
+		return []ListObject{}, err
 	}
 	var list = []ListObject{}
 	for _, key := range resp.Contents {
@@ -228,18 +227,48 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		}
 		var folder = *key.Key
 		if !isFolder {
-			var fullpath = strings.Split(folder,"/")
-			folder = strings.Join(fullpath[:len(fullpath)-1],"/")
+			var fullpath = strings.Split(folder, "/")
+			folder = strings.Join(fullpath[:len(fullpath)-1], "/")
 		}
-		var fileSlice = strings.Split(*key.Key,"/")
-		list = append(list,ListObject{
-			Fulpath: *key.Key,
-			Folder: folder,
-			File: fileSlice[len(fileSlice)-1],
-			Size: uint64(*key.Size),
+		var fileSlice = strings.Split(*key.Key, "/")
+		list = append(list, ListObject{
+			Fulpath:   *key.Key,
+			Folder:    folder,
+			File:      fileSlice[len(fileSlice)-1],
+			Size:      uint64(*key.Size),
 			LastModif: *key.LastModified,
-			IsFolder: isFolder,
+			IsFolder:  isFolder,
 		})
 	}
-	return list,nil
+	return list, nil
+}
+
+func (img *S3img) Exist(bucket string) (bool, error) {
+	bucket = strings.TrimRight(bucket, "/")
+	var bucketSlice = strings.Split(bucket, "/")
+	bucket = bucketSlice[0]
+	var filepath = strings.Join(bucketSlice[1:], "/")
+	filepath = strings.TrimRight(filepath, "/")
+
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Region:      aws.String(img.AwsRegion),
+			Credentials: credentials.NewStaticCredentials(img.AwsKey, img.AwsScreetKey, ""),
+		},
+	})
+	svc := s3.New(sess)
+	params := &s3.ListObjectsInput{
+		Bucket: aws.String(bucket),
+		Prefix: aws.String(filepath),
+	}
+	resp, err := svc.ListObjects(params)
+
+	if err != nil {
+		return false, err
+	}
+	if len(resp.Contents) == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }

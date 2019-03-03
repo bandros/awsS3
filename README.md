@@ -61,9 +61,22 @@ for _,v := range list {\
     fmt.Println(v.File," in ",v.Folder)\
 }
 
+## Check File
+img := awsS3.S3img{}\
+img.AwsRegion = "ap-southeast-1"\
+img.AwsKey = "Aws Key"\
+img.AwsScreetKey = "Aws Screet Key"\
+location, err := img.Exist("bucket/folder")\
+if err != nil {\
+    fmt.Println(err.Error())\
+    return\
+}\
+if exist {\
+    fmt.Println("File exist ")
+}else{\
+    fmt.Println("File doesn't exist")\
+}
 
-**Router Framework**
-https://github.com/gin-gonic/gin
 
 **Creator**
 https://github.com/tss182
