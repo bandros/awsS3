@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/disintegration/imaging"
 	"image"
+	"image/png"
 	"mime/multipart"
 	"net/http"
 	"strings"
@@ -157,9 +158,9 @@ func upload(uploader *s3manager.Uploader, file *multipart.FileHeader, img image.
 	buf := new(bytes.Buffer)
 	switch contentType {
 	case "image/png":
-		err = imaging.Encode(buf, img, imaging.PNG)
+		err = imaging.Encode(buf, img, imaging.PNG, imaging.PNGCompressionLevel(png.BestCompression))
 	case "image/jpeg":
-		err = imaging.Encode(buf, img, imaging.JPEG)
+		err = imaging.Encode(buf, img, imaging.JPEG,imaging.JPEGQuality(75))
 	case "image/gif":
 		err = imaging.Encode(buf, img, imaging.GIF)
 	case "image/bmp":
