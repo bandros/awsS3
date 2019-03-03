@@ -185,3 +185,28 @@ func upload(uploader *s3manager.Uploader, file *multipart.FileHeader, img image.
 
 	return result.Location, nil
 }
+
+
+func (img *S3img) List(bucket string) ([]string, error) {
+	var list = []string{}
+	var bucketSlice = strings.Split(bucket, "/")
+	bucket = bucketSlice[0]
+	var filepath = strings.Join(bucketSlice[1:], "/")
+	filepath = strings.TrimRight(filepath, "/")
+
+	svc := s3.New(session.New(), &aws.Config{Region: aws.String("us-east-1")})
+
+	params := &s3.ListObjectsInput{
+		Bucket: aws.String(bucket),
+		Prefix: aws.String(filepath),
+	}
+
+	resp, err := svc.ListObjects(params)
+	if err != nil {
+		return nil,err
+	}
+	for _, key := range resp.Contents {
+		list = append(list,*key.Key)
+	}
+	return list,nil
+}
