@@ -72,7 +72,7 @@ if err != nil {\
     return\
 }\
 if exist {\
-    fmt.Println("File exist ")
+    fmt.Println("File exist ")\
 }else{\
     fmt.Println("File doesn't exist")\
 }

@@ -28,6 +28,8 @@ type S3img struct {
 	AwsKey       string
 	AwsScreetKey string
 	AwsRegion    string
+	overwrite    bool
+	typeFile     string
 }
 
 type ListObject struct {
