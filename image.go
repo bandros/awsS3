@@ -116,6 +116,7 @@ func (img *S3img) UploadUrl(url, bucket string) (string, error) {
 		ACL:         aws.String("public-read"),
 		ContentType: &contentType,
 	})
+	file.Close()
 	os.Remove(fileString)
 	return result.Location, nil
 }
