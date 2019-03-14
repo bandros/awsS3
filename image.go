@@ -85,7 +85,11 @@ func (img *S3img) UploadUrl(url, bucket string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	image := imaging.Resize(src, img.Width, img.Height, imaging.Lanczos)
+	var width, height = getSize(src.Bounds())
+	var image = src
+	if (img.Width > 0 || img.Height > 0) && img.Width < width && img.Height < height {
+		image = imaging.Resize(src, img.Width, img.Height, imaging.Lanczos)
+	}
 	var contentType = r.Header.Get("Content-Type")
 	imaging.Save(image, fileString)
 	file, err := os.Open(fileString)
