@@ -13,6 +13,7 @@ import (
 	"image/png"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -71,6 +72,55 @@ func (img *S3img) SetMulti(files []*multipart.FileHeader) error {
 	}
 	img.fileMulti = files
 	return nil
+}
+
+func (img *S3img) UploadUrl(url, bucket string) (string, error) {
+	var fileSplit = strings.Split(url, "/")
+	var fileString = img.Prefix + fileSplit[len(fileSplit)-1]
+	r, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	src, err := imaging.Decode(r.Body)
+	if err != nil {
+		return "", err
+	}
+	image := imaging.Resize(src, img.Width, img.Height, imaging.Lanczos)
+	var contentType = r.Header.Get("Content-Type")
+	imaging.Save(image, fileString)
+	file, err := os.Open(fileString)
+	if err != nil {
+		return "", err
+	}
+	var bucketSlice = strings.Split(bucket, "/")
+	bucket = bucketSlice[0]
+	var filepath = strings.Join(bucketSlice[1:], "/")
+	filepath = strings.TrimRight(filepath, "/") + "/" + fileString
+	fileInfo, _ := file.Stat()
+	var size int64 = fileInfo.Size()
+	buffer := make([]byte, size)
+	file.Read(buffer)
+
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Region:      aws.String(img.AwsRegion),
+			Credentials: credentials.NewStaticCredentials(img.AwsKey, img.AwsScreetKey, ""),
+		},
+	})
+
+	uploader := s3manager.NewUploader(sess)
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket:      &bucket,
+		Key:         &filepath,
+		Body:        bytes.NewReader(buffer),
+		ACL:         aws.String("public-read"),
+		ContentType: &contentType,
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return result.Location, nil
 }
 
 func (img *S3img) Upload(bucket string) ([]string, error) {

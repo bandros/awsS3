@@ -48,7 +48,7 @@ func (f *S3File) Upload(bucket string) (string, error) {
 	var size int64 = fileInfo.Size()
 	buffer := make([]byte, size)
 	file.Read(buffer)
-	filepath = filepath+"/"+f.filename
+	filepath = filepath + "/" + f.filename
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: &bucket,
 		Key:    &filepath,
