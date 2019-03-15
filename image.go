@@ -76,6 +76,7 @@ func (img *S3img) SetMulti(files []*multipart.FileHeader) error {
 }
 
 func (img *S3img) UploadUrl(urls, bucket string) (string, error) {
+	urls = strings.TrimSpace(urls)
 	var u,err = url.Parse(urls)
 	if err != nil {
 		return "", err
