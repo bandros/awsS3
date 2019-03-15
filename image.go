@@ -13,6 +13,7 @@ import (
 	"image/png"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -74,10 +75,14 @@ func (img *S3img) SetMulti(files []*multipart.FileHeader) error {
 	return nil
 }
 
-func (img *S3img) UploadUrl(url, bucket string) (string, error) {
-	var fileSplit = strings.Split(url, "/")
+func (img *S3img) UploadUrl(urls, bucket string) (string, error) {
+	var u,err = url.Parse(urls)
+	if err != nil {
+		return "", err
+	}
+	var fileSplit = strings.Split(u.Path, "/")
 	var fileString = img.Prefix + fileSplit[len(fileSplit)-1]
-	r, err := http.Get(url)
+	r, err := http.Get(urls)
 	if err != nil {
 		return "", err
 	}
