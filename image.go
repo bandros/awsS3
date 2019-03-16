@@ -2,6 +2,7 @@ package awsS3
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -83,7 +84,11 @@ func (img *S3img) UploadUrl(urls, bucket string) (string, error) {
 	}
 	var fileSplit = strings.Split(u.Path, "/")
 	var fileString = img.Prefix + fileSplit[len(fileSplit)-1]
-	r, err := http.Get(urls)
+	transCfg := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // disable verify
+	}
+	client := &http.Client{Transport: transCfg}
+	r, err := client.Get(urls)
 	if err != nil {
 		return "", err
 	}
