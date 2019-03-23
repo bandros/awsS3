@@ -277,24 +277,37 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 	svc := s3.New(sess)
 	params := &s3.ListObjectsInput{
 		Bucket: aws.String(bucket),
-		Prefix: aws.String(filepath),
+		Prefix:aws.String(filepath+"/"),
+		Delimiter:aws.String("/"),
 	}
 	resp, err := svc.ListObjects(params)
-
 	if err != nil {
 		return []ListObject{}, err
 	}
 	var list = []ListObject{}
+
+	for _, v := range resp.CommonPrefixes{
+		var uri = *v.Prefix
+		uri = strings.TrimRight(uri,"/")
+		var fullpath = strings.Split(uri, "/")
+		var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
+		var fileSlice = strings.Split(uri, "/")
+		list = append(list, ListObject{
+			Fulpath:   uri,
+			Folder:    folder,
+			File:      fileSlice[len(fileSlice)-1],
+			Size:      0,
+			IsFolder:  true,
+		})
+	}
 	for _, key := range resp.Contents {
-		var isFolder = false
-		if *key.Size == 0 {
-			isFolder = true
+		if *key.Key == filepath+"/"{
+			continue
 		}
+
 		var folder = *key.Key
-		if !isFolder {
-			var fullpath = strings.Split(folder, "/")
-			folder = strings.Join(fullpath[:len(fullpath)-1], "/")
-		}
+		var fullpath = strings.Split(folder, "/")
+		folder = strings.Join(fullpath[:len(fullpath)-1], "/")
 		var fileSlice = strings.Split(*key.Key, "/")
 		list = append(list, ListObject{
 			Fulpath:   *key.Key,
@@ -302,7 +315,7 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 			File:      fileSlice[len(fileSlice)-1],
 			Size:      uint64(*key.Size),
 			LastModif: *key.LastModified,
-			IsFolder:  isFolder,
+			IsFolder:  false,
 		})
 	}
 	return list, nil
