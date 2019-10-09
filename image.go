@@ -33,6 +33,7 @@ type S3img struct {
 	AwsRegion    string
 	overwrite    bool
 	typeFile     string
+	Search       string
 }
 
 type ListObject struct {
@@ -78,7 +79,7 @@ func (img *S3img) SetMulti(files []*multipart.FileHeader) error {
 
 func (img *S3img) UploadUrl(urls, bucket string) (string, error) {
 	urls = strings.TrimSpace(urls)
-	var u,err = url.Parse(urls)
+	var u, err = url.Parse(urls)
 	if err != nil {
 		return "", err
 	}
@@ -274,11 +275,16 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 			Credentials: credentials.NewStaticCredentials(img.AwsKey, img.AwsScreetKey, ""),
 		},
 	})
+
+	var search = strings.TrimSpace(img.Search)
+	if search != "" {
+		filepath += "/" + search
+	}
 	svc := s3.New(sess)
 	params := &s3.ListObjectsInput{
-		Bucket: aws.String(bucket),
-		Prefix:aws.String(filepath+"/"),
-		Delimiter:aws.String("/"),
+		Bucket:    aws.String(bucket),
+		Prefix:    aws.String(filepath),
+		Delimiter: aws.String("/"),
 	}
 	resp, err := svc.ListObjects(params)
 	if err != nil {
@@ -286,22 +292,22 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 	}
 	var list = []ListObject{}
 
-	for _, v := range resp.CommonPrefixes{
+	for _, v := range resp.CommonPrefixes {
 		var uri = *v.Prefix
-		uri = strings.TrimRight(uri,"/")
+		uri = strings.TrimRight(uri, "/")
 		var fullpath = strings.Split(uri, "/")
 		var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
 		var fileSlice = strings.Split(uri, "/")
 		list = append(list, ListObject{
-			Fulpath:   uri,
-			Folder:    folder,
-			File:      fileSlice[len(fileSlice)-1],
-			Size:      0,
-			IsFolder:  true,
+			Fulpath:  uri,
+			Folder:   folder,
+			File:     fileSlice[len(fileSlice)-1],
+			Size:     0,
+			IsFolder: true,
 		})
 	}
 	for _, key := range resp.Contents {
-		if *key.Key == filepath+"/"{
+		if *key.Key == filepath+"/" {
 			continue
 		}
 
