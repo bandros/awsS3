@@ -286,43 +286,54 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		Prefix: aws.String(filepath),
 		//Delimiter: aws.String("/"),
 	}
-	resp, err := svc.ListObjects(params)
-	if err != nil {
-		return []ListObject{}, err
-	}
 	var list = []ListObject{}
+	for {
+		resp, err := svc.ListObjects(params)
+		if err != nil {
+			return []ListObject{}, err
+		}
+		if *resp.IsTruncated {
 
-	for _, v := range resp.CommonPrefixes {
-		var uri = *v.Prefix
-		uri = strings.TrimRight(uri, "/")
-		var fullpath = strings.Split(uri, "/")
-		var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
-		var fileSlice = strings.Split(uri, "/")
-		list = append(list, ListObject{
-			Fulpath:  uri,
-			Folder:   folder,
-			File:     fileSlice[len(fileSlice)-1],
-			Size:     0,
-			IsFolder: true,
-		})
-	}
-	for _, key := range resp.Contents {
-		if *key.Key == filepath+"/" {
+			// list outputs folder
+			for _, v := range resp.CommonPrefixes {
+				var uri = *v.Prefix
+				uri = strings.TrimRight(uri, "/")
+				var fullpath = strings.Split(uri, "/")
+				var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
+				var fileSlice = strings.Split(uri, "/")
+				list = append(list, ListObject{
+					Fulpath:  uri,
+					Folder:   folder,
+					File:     fileSlice[len(fileSlice)-1],
+					Size:     0,
+					IsFolder: true,
+				})
+			}
+
+			//list outputs file
+			for _, key := range resp.Contents {
+				if *key.Key == filepath+"/" {
+					continue
+				}
+
+				var folder = *key.Key
+				var fullpath = strings.Split(folder, "/")
+				folder = strings.Join(fullpath[:len(fullpath)-1], "/")
+				var fileSlice = strings.Split(*key.Key, "/")
+				list = append(list, ListObject{
+					Fulpath:   *key.Key,
+					Folder:    folder,
+					File:      fileSlice[len(fileSlice)-1],
+					Size:      uint64(*key.Size),
+					LastModif: *key.LastModified,
+					IsFolder:  false,
+				})
+			}
+
+			params.SetMarker(*resp.NextMarker)
 			continue
 		}
-
-		var folder = *key.Key
-		var fullpath = strings.Split(folder, "/")
-		folder = strings.Join(fullpath[:len(fullpath)-1], "/")
-		var fileSlice = strings.Split(*key.Key, "/")
-		list = append(list, ListObject{
-			Fulpath:   *key.Key,
-			Folder:    folder,
-			File:      fileSlice[len(fileSlice)-1],
-			Size:      uint64(*key.Size),
-			LastModif: *key.LastModified,
-			IsFolder:  false,
-		})
+		break
 	}
 	return list, nil
 }
