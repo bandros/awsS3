@@ -33,7 +33,6 @@ type S3img struct {
 	AwsRegion    string
 	overwrite    bool
 	typeFile     string
-	Search       string
 }
 
 type ListObject struct {
@@ -276,15 +275,12 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		},
 	})
 
-	var search = strings.TrimSpace(img.Search)
-	if search != "" {
-		filepath += "/" + search
-	}
 	svc := s3.New(sess)
 	params := &s3.ListObjectsInput{
 		Bucket:    aws.String(bucket),
 		Prefix:    aws.String(filepath),
 		Delimiter: aws.String(filepath),
+		MaxKeys:   aws.Int64(10),
 	}
 	var list = []ListObject{}
 	for {
