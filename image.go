@@ -282,9 +282,9 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 	}
 	svc := s3.New(sess)
 	params := &s3.ListObjectsInput{
-		Bucket: aws.String(bucket),
-		Prefix: aws.String(filepath),
-		//Delimiter: aws.String("/"),
+		Bucket:    aws.String(bucket),
+		Prefix:    aws.String(filepath),
+		Delimiter: aws.String(filepath),
 	}
 	var list = []ListObject{}
 	for {
