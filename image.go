@@ -280,7 +280,7 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		Bucket:    aws.String(bucket),
 		Prefix:    aws.String(filepath),
 		Delimiter: aws.String(filepath),
-		MaxKeys:   aws.Int64(1),
+		MaxKeys:   aws.Int64(20),
 	}
 	var list = []ListObject{}
 	for {
@@ -288,48 +288,52 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		if err != nil {
 			return []ListObject{}, err
 		}
-		if *resp.IsTruncated {
 
-			// list outputs folder
-			//for _, v := range resp.CommonPrefixes {
-			//	var uri = *v.Prefix
-			//	uri = strings.TrimRight(uri, "/")
-			//	var fullpath = strings.Split(uri, "/")
-			//	var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
-			//	var fileSlice = strings.Split(uri, "/")
-			//	list = append(list, ListObject{
-			//		Fulpath:  uri,
-			//		Folder:   folder,
-			//		File:     fileSlice[len(fileSlice)-1],
-			//		Size:     0,
-			//		IsFolder: true,
-			//	})
-			//}
+		// list outputs folder
+		for _, v := range resp.CommonPrefixes {
+			var uri = *v.Prefix
+			uri = strings.TrimRight(uri, "/")
+			var fullpath = strings.Split(uri, "/")
+			var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
+			var fileSlice = strings.Split(uri, "/")
+			list = append(list, ListObject{
+				Fulpath:  uri,
+				Folder:   folder,
+				File:     fileSlice[len(fileSlice)-1],
+				Size:     0,
+				IsFolder: true,
+			})
+		}
 
-			//list outputs file
-			for _, key := range resp.Contents {
-				if *key.Key == filepath+"/" {
-					continue
-				}
-
-				var folder = *key.Key
-				var fullpath = strings.Split(folder, "/")
-				folder = strings.Join(fullpath[:len(fullpath)-1], "/")
-				var fileSlice = strings.Split(*key.Key, "/")
-				list = append(list, ListObject{
-					Fulpath:   *key.Key,
-					Folder:    folder,
-					File:      fileSlice[len(fileSlice)-1],
-					Size:      uint64(*key.Size),
-					LastModif: *key.LastModified,
-					IsFolder:  false,
-				})
+		//list outputs file
+		for _, key := range resp.Contents {
+			if *key.Key == filepath+"/" {
+				continue
 			}
 
-			params.SetMarker(*resp.NextMarker)
-			continue
+			var folder = *key.Key
+			var fullpath = strings.Split(folder, "/")
+			folder = strings.Join(fullpath[:len(fullpath)-1], "/")
+			var fileSlice = strings.Split(*key.Key, "/")
+			var isFolder = false
+			if uint64(*key.Size) == 0 {
+				isFolder = true
+			}
+			list = append(list, ListObject{
+				Fulpath:   *key.Key,
+				Folder:    folder,
+				File:      fileSlice[len(fileSlice)-1],
+				Size:      uint64(*key.Size),
+				LastModif: *key.LastModified,
+				IsFolder:  isFolder,
+			})
 		}
-		break
+
+		if !*resp.IsTruncated {
+			break
+		} else {
+			params.SetMarker(*resp.NextMarker)
+		}
 	}
 	return list, nil
 }
