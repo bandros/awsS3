@@ -280,7 +280,7 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		Bucket:    aws.String(bucket),
 		Prefix:    aws.String(filepath),
 		Delimiter: aws.String(filepath),
-		MaxKeys:   aws.Int64(10),
+		MaxKeys:   aws.Int64(1),
 	}
 	var list = []ListObject{}
 	for {
@@ -291,20 +291,20 @@ func (img *S3img) List(bucket string) ([]ListObject, error) {
 		if *resp.IsTruncated {
 
 			// list outputs folder
-			for _, v := range resp.CommonPrefixes {
-				var uri = *v.Prefix
-				uri = strings.TrimRight(uri, "/")
-				var fullpath = strings.Split(uri, "/")
-				var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
-				var fileSlice = strings.Split(uri, "/")
-				list = append(list, ListObject{
-					Fulpath:  uri,
-					Folder:   folder,
-					File:     fileSlice[len(fileSlice)-1],
-					Size:     0,
-					IsFolder: true,
-				})
-			}
+			//for _, v := range resp.CommonPrefixes {
+			//	var uri = *v.Prefix
+			//	uri = strings.TrimRight(uri, "/")
+			//	var fullpath = strings.Split(uri, "/")
+			//	var folder = strings.Join(fullpath[:len(fullpath)-1], "/")
+			//	var fileSlice = strings.Split(uri, "/")
+			//	list = append(list, ListObject{
+			//		Fulpath:  uri,
+			//		Folder:   folder,
+			//		File:     fileSlice[len(fileSlice)-1],
+			//		Size:     0,
+			//		IsFolder: true,
+			//	})
+			//}
 
 			//list outputs file
 			for _, key := range resp.Contents {
