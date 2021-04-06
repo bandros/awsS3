@@ -17,6 +17,7 @@ type S3File struct {
 	AwsKey       string
 	AwsScreetKey string
 	AwsRegion    string
+	AwsEndpoint string
 }
 
 func (f *S3File) Set(file string) {
@@ -32,6 +33,7 @@ func (f *S3File) Upload(bucket string) (string, error) {
 	filepath = strings.TrimRight(filepath, "/")
 	sess, _ := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
+			Endpoint: aws.string(f.AwsEndpoint),
 			Region:      aws.String(f.AwsRegion),
 			Credentials: credentials.NewStaticCredentials(f.AwsKey, f.AwsScreetKey, ""),
 		},
